@@ -4,10 +4,6 @@ setup(
     name = 'PythonDataProcessing',
     packages = find_packages(),
     include_package_data = True,
-    setup(
-    name = 'forecast-team-1',
-    packages = find_packages(),
-    include_package_data = True,
     install_requires = [
          'numpy==1.19.4',
          'torch==1.8.1',
