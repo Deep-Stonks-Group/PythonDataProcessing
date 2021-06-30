@@ -5,8 +5,6 @@ Just a library of python data retrieval stuff to be reused.
  pip install git+https://github.com/Deep-Stonks-Group/PythonDataProcessing.git 
 
 ## If you are on windows follow these steps:
-https://github.com/mrjbq7/ta-lib#dependencies
-
 
 Download [ta-lib-0.4.0-msvc.zip](http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-msvc.zip)
 and unzip to ``C:\ta-lib``.
@@ -25,6 +23,8 @@ and unzip to ``C:\ta-lib``.
 >      Prompt]``
 >    * Move to ``C:\ta-lib\c\make\cdr\win32\msvc``
 >    * Build the Library ``nmake``
+
+Got instructions from: https://github.com/mrjbq7/ta-lib#dependencies
 
 You might also try these unofficial windows binaries for both 32-bit and
 64-bit:
