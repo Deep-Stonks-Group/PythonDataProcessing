@@ -2,7 +2,7 @@
 Just a library of python data retrieval stuff to be reused.
 
 ## Installation
- pip install git+https://github.com/Deep-Stonks-Group/PythonDataProcessing.git 
+ `pip install git+https://github.com/Deep-Stonks-Group/PythonDataProcessing.git `
 
 ### If you are on windows follow these steps:
 
