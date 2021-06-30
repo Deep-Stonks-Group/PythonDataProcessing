@@ -113,3 +113,8 @@ def add_EMA(data):
     data= data.iloc[29:, :]
     return data
 
+add_technical_indicators = {
+    'SMA': add_SMA,
+    'EMA': add_EMA
+}
+
