@@ -4,7 +4,7 @@ Just a library of python data retrieval stuff to be reused.
 ## Installation
  pip install git+https://github.com/Deep-Stonks-Group/PythonDataProcessing.git 
 
-## If you are on windows follow these steps:
+### If you are on windows follow these steps:
 
 Download [ta-lib-0.4.0-msvc.zip](http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-msvc.zip)
 and unzip to ``C:\ta-lib``.
