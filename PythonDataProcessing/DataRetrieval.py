@@ -1,6 +1,4 @@
-rom
-Historic_Crypto
-import HistoricalData
+from Historic_Crypto import HistoricalData
 from datetime import datetime
 import yfinance as yf
 import talib as ta
@@ -14,11 +12,13 @@ You can access individual values by doing: data['High'], data['Low']...
 def get_crypto_data(symbol, **kwargs):
     '''
     This functions takes a symbol for a crypto and returns it's historic data.
+
     Input:
         symbol (Required) - Takes the exchanged pairs: ETH-USD or BTC_ETH, or BTC-USD
         interval (optional) - Takes the interval of prices: 1d, 1h, 5m or 1m.
         start_date (optional) - The earliest historic data you want in form YYYY-MM-DD-HH-SS: 2000-01-01-00-00
         end_date (optional) - The latest historic data you want in form YYYY-MM-DD-HH-SS: 2000-01-01-00-00
+
     Output:
         A data frame with the High, Low, Open, Close and Volume prices. This is the historic prices. By default it returns
         all daily prices unless otherwise specified.
@@ -48,16 +48,20 @@ def get_crypto_data(symbol, **kwargs):
 def get_stock_data(symbol, **kwargs):
     '''
     This functions takes a symbol for a stock and returns it's historic data.
+
     Input:
         symbol (Required) - Takes the exchanged pairs: ETH-USD or BTC_ETH, or BTC-USD
         interval (optional) - Takes the interval of prices: 1d, 1h, 5m or 1m.
         start_date (optional) - The earliest historic data you want in form YYYY-MM-DD: 2000-01-01
         end_date (optional) - The latest historic data you want in form YYYY-MM-DD: 2000-01-01
         period (optional) - Instead of specifying an end_date you can specify a period: 1d, 1y, 1m, 2y
+
     Output:
         A data frame with the High, Low, Open, Close and Volume prices. This is the historic prices. By default it returns
         all daily prices unless otherwise specified.
+
     ** Note: yFinance is limited in what it can return in terms of intraday data so be aware.
+
     Examples:
         data_source = DR.get_stock_data('DIA',interval='1d',period='2y')
         data_source = DR.get_stock_data('AAPL',start_date='2021-04-01',end_date='2021-06-01')
@@ -77,8 +81,10 @@ def get_stock_data(symbol, **kwargs):
 def add_SMA(data):
     '''
     This functions takes a data frame of historic data and adds the SMA to it.
+
     Input:
         data (required) - A dataframe of historic data that SMA will be added to.
+
     Output:
         A data frame with the SMA added.
     Examples:
@@ -94,8 +100,10 @@ def add_SMA(data):
 def add_EMA(data):
     '''
     This functions takes a data frame of historic data and adds the EMA to it.
+
     Input:
         data (required) - A dataframe of historic data that EMA will be added to.
+
     Output:
         A data frame with the EMA added.
     Examples:
