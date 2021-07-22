@@ -133,7 +133,3 @@ add_technical_indicators = {
     'EMA': add_EMA,
     'SMA': add_SMA
 }
-
-data = get_stock_data('AAPL')
-data = add_features(['High','Low','Close','Volume','EMA'],['SMA'],data)
-print()
