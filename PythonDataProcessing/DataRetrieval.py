@@ -2,11 +2,45 @@ from Historic_Crypto import HistoricalData
 from datetime import datetime
 import yfinance as yf
 import talib as ta
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from pandas.core.frame import DataFrame
+
+pd.options.mode.chained_assignment = None
 
 '''
 All data goes from earliest to latest and is stored in a data frame.
 You can access individual values by doing: data['High'], data['Low']...
 '''
+
+class Scaler():
+    def __init__(self,input_features,label_features):
+        self.data_scaler = MinMaxScaler()
+        self.label_scaler = MinMaxScaler()
+        self.input_features = input_features
+        self.label_features = label_features
+
+    def set_train_size(self,train_size):
+        self.train_size = train_size
+
+    def fit_scalers(self,data_source):
+        '''
+        Creates the data and label scalers that are used to normalize data. This is created on the training dataset.
+        :param data_source: The training dataset used to create the normalization models.
+        '''
+        self.data_scaler.fit(data_source[self.input_features].iloc[:self.train_size])
+        self.label_scaler.fit(data_source[self.label_features].iloc[:self.train_size])
+
+    def normalize_stock_data(self, data_source):
+        '''
+        This uses pre-fit datascalers to normalize the entire dataset.
+        :param data_source: The entire dataset to be normalized.
+        '''
+        scaled_data = self.data_scaler.transform(data_source[self.input_features])
+        scaled_lbls = self.label_scaler.transform(data_source[self.label_features])
+        return scaled_data, scaled_lbls
+
+
 
 
 def get_crypto_data(symbol, **kwargs):
@@ -106,7 +140,6 @@ def add_SMA(data):
     sma = ta.SMA(data['Close'])
     data['SMA'] = sma
     data = data.iloc[29:, :]
-    print("jdfi")
     return data
 
 
@@ -128,6 +161,15 @@ def add_EMA(data):
     data = data.iloc[29:, :]
     return data
 
+def sliding_windows( data, labels, seq_length):
+    x = []
+    y = []
+    for i in range(data.shape[0]-seq_length-1):
+        _x = data[i: (i+seq_length)]
+        _y = labels[i+seq_length]
+        x.append(_x)
+        y.append(_y)
+    return x, y
 
 add_technical_indicators = {
     'EMA': add_EMA,

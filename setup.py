@@ -7,7 +7,7 @@ setup(
     install_requires = [
          'numpy==1.19.4',
          'Historic-Crypto==0.1.4',
-         'yfinance==0.1.59',
+         'yfinance==0.1.63',
          'sklearn==0.0',
          'TA-Lib==0.4.20',
     ]
