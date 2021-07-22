@@ -111,25 +111,26 @@ def get_stock_data(symbol, **kwargs):
 
     return stock.history(interval=interval, start=start_date, end=end_date)
 
-def add_features(input_features,label_features,data):
+def add_features(input_features,label_features,data,key='Close'):
     new_features = []
     new_features.extend(set(input_features) - set(data.columns))
     new_features.extend(set(label_features) - set(data.columns))
 
     for new_feature in new_features:
         try:
-            data = add_technical_indicators[new_feature](data)
+            data = add_technical_indicators[new_feature](data,key)
         except KeyError:
             print(f'No function exists to add the dimension {new_feature}')
             raise
     return data
 
-def add_SMA(data):
+def add_SMA(data,key='Close'):
     '''
     This functions takes a data frame of historic data and adds the SMA to it.
 
     Input:
         data (required) - A dataframe of historic data that SMA will be added to.
+        key (optional) - The column which you want to apply the SMA.
 
     Output:
         A data frame with the SMA added.
@@ -137,18 +138,19 @@ def add_SMA(data):
         add_SMA(data_source)
     '''
     # Adding SMA
-    sma = ta.SMA(data['Close'])
+    sma = ta.SMA(data[key])
     data['SMA'] = sma
     data = data.iloc[29:, :]
     return data
 
 
-def add_EMA(data):
+def add_EMA(data,key='Close'):
     '''
     This functions takes a data frame of historic data and adds the EMA to it.
 
     Input:
         data (required) - A dataframe of historic data that EMA will be added to.
+        key (optional) - The column which you want to apply the SMA.
 
     Output:
         A data frame with the EMA added.
@@ -156,7 +158,7 @@ def add_EMA(data):
         add_EMA(data_source)
     '''
     # Adding EMA
-    ema = ta.EMA(data['Close'])
+    ema = ta.EMA(data[key])
     data['EMA'] = ema
     data = data.iloc[29:, :]
     return data
