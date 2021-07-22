@@ -77,6 +77,18 @@ def get_stock_data(symbol, **kwargs):
 
     return stock.history(interval=interval, start=start_date, end=end_date)
 
+def add_features(input_features,label_features,data):
+    new_features = []
+    new_features.extend(set(input_features) - set(data.columns))
+    new_features.extend(set(label_features) - set(data.columns))
+
+    for new_feature in new_features:
+        try:
+            data = add_technical_indicators[new_feature](data)
+        except KeyError:
+            print(f'No function exists to add the dimension {new_feature}')
+            raise
+    return data
 
 def add_SMA(data):
     '''
@@ -94,6 +106,7 @@ def add_SMA(data):
     sma = ta.SMA(data['Close'])
     data['SMA'] = sma
     data = data.iloc[29:, :]
+    print("jdfi")
     return data
 
 
@@ -120,3 +133,7 @@ add_technical_indicators = {
     'EMA': add_EMA,
     'SMA': add_SMA
 }
+
+data = get_stock_data('AAPL')
+data = add_features(['High','Low','Close','Volume','EMA'],['SMA'],data)
+print()
