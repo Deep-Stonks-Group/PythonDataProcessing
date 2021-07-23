@@ -8,8 +8,32 @@ from pandas.core.frame import DataFrame
 
 pd.options.mode.chained_assignment = None
 
+
 class LSTM_DATA_HANDLE():
+    '''
+    Handles all gathering. Retrieves the data from the corresponding APIs, normalizes the data and formats it so that it
+    is ready to go for the LSTM.
+    '''
+
     def __init__(self, ticker, **kwargs):
+        '''
+        Initialization of the data handler.
+
+          Input:
+              *ticker* (Required) - String ticker that you want to train on. \n
+              **kwargs**
+                  *input_features* (Optional) - Array of features to be used for input. \n
+                  *label_features* (Optional) - Array of feature to be used for label. \n
+                  *indicator_key* (Optional) - String indicating which column in data you want to use for indicator. \n
+                  *seq_length* (Optional) - Integer length of sequence. \n
+                  *interval* (Optional) - String interval of prices: 1d, 1h, 5m or 1m. \n
+                  *period* (Optional) - String specify a length of data to be retrieved: 1d, 1y, 1m, 2y \n
+                  *start_date* (Optional) - The earliest historic data you want in form YYYY-MM-DD: 2000-01-01 \n
+                  *end_date* (Optional) - The latest historic data you want in form YYYY-MM-DD: 2000-01-01 \n
+                  *training_set_coeff* (Optional) - Decimal percent of dataset used for training. \n
+                  *is_crpyto* (Optional) - Boolean which indicates if ticker is a crypto. \n
+        '''
+
         self.data_scaler = MinMaxScaler()
         self.label_scaler = MinMaxScaler()
 
@@ -26,14 +50,14 @@ class LSTM_DATA_HANDLE():
         self.training_set_coeff = kwargs.get('training_set_coeff', 0.8)
         self.is_crpyto = kwargs.get('is_crpyto', False)
 
-    def set_train_size(self, train_size):
-        self.train_size = train_size
-
     def retrieve_data(self):
         '''
-        This function uses DataRtrieval to load the data, normalize it and format it to be used by the LSTM.
-        :return x: The input data for the model after it is loaded, split and ready to be used.
-        :return y: The labels for the model after it is loaded and adjusted.
+          This function uses DataRtrieval to load the data, normalize it and format it to be used by the LSTM.
+
+          Output:
+              *x* - The final input data m x seq_length x n. Where m is the length of the entire dataset and n is
+              the number of features. \n
+              *y* - The corresponding m x 1 final labels for the dataset where m is the length of the entire dataset. \n
         '''
         if not self.is_crpyto:
             data = get_stock_data(self.ticker, interval=self.interval,
@@ -41,11 +65,9 @@ class LSTM_DATA_HANDLE():
         else:
             data = get_crypto_data(self.ticker, interval=self.interval, start_date=self.start_date,
                                    end_date=self.end_date)
-
         data = add_features(self.input_features, self.label_features, data, key=self.indicator_key)
-
         self.train_size = int(len(data) * self.training_set_coeff)
-        self.set_train_size(self.train_size)
+        self.set_train_size = self.train_size
         self.fit_scalers(data)
         scaled_data, scaled_labels = self.normalize_stock_data(data)
         x, y = sliding_windows(scaled_data, scaled_labels, self.seq_length)
@@ -53,20 +75,35 @@ class LSTM_DATA_HANDLE():
 
     def fit_scalers(self, data_source):
         '''
-        Creates the data and label scalers that are used to normalize data. This is created on the training dataset.
-        :param data_source: The training dataset used to create the normalization models.
+          Creates the data and label scalers that are used to normalize data. This is created on the training dataset.
+
+          Input:
+              *data_source* (Required) - The training dataset used to create the normalization models.
         '''
         self.data_scaler.fit(data_source[self.input_features].iloc[:self.train_size])
         self.label_scaler.fit(data_source[self.label_features].iloc[:self.train_size])
 
     def normalize_stock_data(self, data_source):
         '''
-        This uses pre-fit datascalers to normalize the entire dataset.
-        :param data_source: The entire dataset to be normalized.
+            This uses pre-fit datascalers to normalize the entire dataset.
+
+            Input:
+                *data_source* (Required) - The training dataset used to create the normalization models.
+
+            Output:
+                *scaled_data* -
+                *scaled_lbls* -
+
         '''
         scaled_data = self.data_scaler.transform(data_source[self.input_features])
         scaled_lbls = self.label_scaler.transform(data_source[self.label_features])
         return scaled_data, scaled_lbls
+
+
+'''
+All data goes from earliest to latest and is stored in a data frame.
+You can access individual values by doing: data['High'], data['Low']...
+'''
 
 
 def get_crypto_data(symbol, **kwargs):
@@ -74,17 +111,17 @@ def get_crypto_data(symbol, **kwargs):
     This functions takes a symbol for a crypto and returns it's historic data.
 
     Input:
-        symbol (Required) - Takes the exchanged pairs: ETH-USD or BTC_ETH, or BTC-USD
-        interval (optional) - Takes the interval of prices: 1d, 1h, 5m or 1m.
-        start_date (optional) - The earliest historic data you want in form YYYY-MM-DD-HH-SS: 2000-01-01-00-00
-        end_date (optional) - The latest historic data you want in form YYYY-MM-DD-HH-SS: 2000-01-01-00-00
+        *symbol* (Required) - Takes the exchanged pairs: ETH-USD or BTC_ETH, or BTC-USD \n
+        *interval* (optional) - Takes the interval of prices: 1d, 1h, 5m or 1m. \n
+        *start_date* (optional) - The earliest historic data you want in form YYYY-MM-DD-HH-SS: 2000-01-01-00-00 \n
+        *end_date* (optional) - The latest historic data you want in form YYYY-MM-DD-HH-SS: 2000-01-01-00-00 \n
 
     Output:
-        A data frame with the High, Low, Open, Close and Volume prices. This is the historic prices. By default it returns
+        *data* - A data frame with the High, Low, Open, Close and Volume prices. This is the historic prices. By default it returns
         all daily prices unless otherwise specified.
 
     Examples:
-        get_crypto_data('BTC-USD',interval='1h',start_date='2021-04-01-00-00')
+        get_crypto_data('BTC-USD',interval='1h',start_date='2021-04-01-00-00') \n
         get_crypto_data('BTC-USD',interval='1h',start_date='2021-04-01-00-00',end_date='2021-06-01-00-00')
         get_crypto_data('ETH-USD')
     '''
@@ -105,30 +142,25 @@ def get_crypto_data(symbol, **kwargs):
     return data
 
 
-'''
-All data goes from earliest to latest and is stored in a data frame.
-You can access individual values by doing: data['High'], data['Low']...
-'''
-
 def get_stock_data(symbol, **kwargs):
     '''
     This functions takes a symbol for a stock and returns it's historic data.
 
     Input:
-        symbol (Required) - Takes the exchanged pairs: ETH-USD or BTC_ETH, or BTC-USD
-        interval (optional) - Takes the interval of prices: 1d, 1h, 5m or 1m.
-        start_date (optional) - The earliest historic data you want in form YYYY-MM-DD: 2000-01-01
-        end_date (optional) - The latest historic data you want in form YYYY-MM-DD: 2000-01-01
-        period (optional) - Instead of specifying an end_date you can specify a period: 1d, 1y, 1m, 2y
+        *symbol* (Required) - Takes the exchanged pairs: ETH-USD or BTC_ETH, or BTC-USD \n
+        *interval* (optional) - Takes the interval of prices: 1d, 1h, 5m or 1m.\n
+        *start_date* (optional) - The earliest historic data you want in form YYYY-MM-DD: 2000-01-01 \n
+        *end_date* (optional) - The latest historic data you want in form YYYY-MM-DD: 2000-01-01 \n
+        *period* (optional) - Instead of specifying an end_date you can specify a period: 1d, 1y, 1m, 2y \n
 
     Output:
-        A data frame with the High, Low, Open, Close and Volume prices. This is the historic prices. By default it returns
+        *data* - A data frame with the High, Low, Open, Close and Volume prices. This is the historic prices. By default it returns
         all daily prices unless otherwise specified.
 
     ** Note: yFinance is limited in what it can return in terms of intraday data so be aware.
 
     Examples:
-        data_source = DR.get_stock_data('DIA',interval='1d',period='2y')
+        data_source = DR.get_stock_data('DIA',interval='1d',period='2y') \n
         data_source = DR.get_stock_data('AAPL',start_date='2021-04-01',end_date='2021-06-01')
     '''
     interval = kwargs.get('interval', '1d')
@@ -144,6 +176,22 @@ def get_stock_data(symbol, **kwargs):
 
 
 def add_features(input_features, label_features, data, key='Close'):
+    '''
+       This function is responsible for adding adding the neccesarry indicators/features to the data.
+
+       Input:
+            *input_features* (Required) -  List of features to be used for input. \n
+            *label_features* (Required) - List of features to be used for labels. \n
+            *data* (Required) - Dataframe of historical stock data. \n
+            *key* (optional) - Key used for technical indicators.
+
+       Output:
+           *data* - A data frame with the High, Low, Open, Close, Volume prices in addition to the added features.
+
+       Examples:
+           data = add_features(['High','Low','Close','Volume','EMA'],['SMA'],data) \n
+           data = add_features(['High','Low','Close','Volume','EMA'],['SMA'],data,key='High')
+       '''
     new_features = []
     new_features.extend(set(input_features) - set(data.columns))
     new_features.extend(set(label_features) - set(data.columns))
@@ -162,11 +210,12 @@ def add_SMA(data, key='Close'):
     This functions takes a data frame of historic data and adds the SMA to it.
 
     Input:
-        data (required) - A dataframe of historic data that SMA will be added to.
-        key (optional) - The column which you want to apply the SMA.
+        *data* (required) - A dataframe of historic data that SMA will be added to. \n
+        *key* (optional) - The column which you want to apply the SMA.
 
     Output:
-        A data frame with the SMA added.
+        *data* - A data frame with the SMA added.
+
     Examples:
         add_SMA(data_source)
     '''
@@ -182,11 +231,12 @@ def add_EMA(data, key='Close'):
     This functions takes a data frame of historic data and adds the EMA to it.
 
     Input:
-        data (required) - A dataframe of historic data that EMA will be added to.
-        key (optional) - The column which you want to apply the SMA.
+        *data* (required) - A dataframe of historic data that EMA will be added to. \n
+        *key* (optional) - The column which you want to apply the SMA.
 
     Output:
-        A data frame with the EMA added.
+        *data* - A data frame with the EMA added.
+
     Examples:
         add_EMA(data_source)
     '''
@@ -198,6 +248,24 @@ def add_EMA(data, key='Close'):
 
 
 def sliding_windows(data, labels, seq_length):
+    '''
+    This functions takes a data array and converts it to an x,y array that is seq_length long.
+    This creates a single seq_length input for an LSTM.
+
+    Input:
+        *data* (required) - An m x n numpy array of data where m is the length of the entire dataset. And n is the number
+        of features. \n
+        *labels* (required) - The corresponding m x 1 labels for the dataset where m is the length of the entire dataset. \n
+        *seq_length* (required) - Represents minutes/hours/days that are included in a single LSTM input.
+
+    Output:
+        *x* - The formatted data m x seq_length x n. Where m is the length of the entire dataset and n is the number of
+        features. \n
+        *y* - The corresponding m x 1 labels for the dataset where m is the length of the entire dataset. \n
+
+    Examples:
+        x, y = sliding_windows(data, labels, 10)
+    '''
     x = []
     y = []
     for i in range(data.shape[0] - seq_length - 1):
