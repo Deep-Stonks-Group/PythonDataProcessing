@@ -5,6 +5,7 @@ import talib as ta
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from pandas.core.frame import DataFrame
+from datetime import timedelta
 
 pd.options.mode.chained_assignment = None
 
@@ -31,7 +32,7 @@ class LSTM_DATA_HANDLE():
                   *start_date* (Optional) - The earliest historic data you want in form YYYY-MM-DD: 2000-01-01 \n
                   *end_date* (Optional) - The latest historic data you want in form YYYY-MM-DD: 2000-01-01 \n
                   *training_set_coeff* (Optional) - Decimal percent of dataset used for training. \n
-                  *is_crpyto* (Optional) - Boolean which indicates if ticker is a crypto. \n
+                  *is_crypto* (Optional) - Boolean which indicates if ticker is a crypto. \n
         '''
 
         self.data_scaler = MinMaxScaler()
@@ -45,10 +46,14 @@ class LSTM_DATA_HANDLE():
         self.seq_length = kwargs.get('seq_length', 10)
         self.interval = kwargs.get('interval', '1d')
         self.period = kwargs.get('period', '2y')
-        self.start_date = kwargs.get('start_date', None)
-        self.end_date = kwargs.get('end_date', None)
         self.training_set_coeff = kwargs.get('training_set_coeff', 0.8)
-        self.is_crpyto = kwargs.get('is_crpyto', False)
+        self.is_crypto = kwargs.get('is_crypto', False)
+        if self.is_crypto:
+            self.start_date = kwargs.get('start_date', '2021-04-01-00-00')
+            self.end_date = kwargs.get('end_date', datetime.today().strftime('%Y-%m-%d-%H-%M'))
+        else:
+            self.start_date = kwargs.get('start_date', None)
+            self.end_date = kwargs.get('end_date', None)
 
     def retrieve_data(self):
         '''
@@ -59,7 +64,7 @@ class LSTM_DATA_HANDLE():
               the number of features. \n
               *y* - The corresponding m x 1 final labels for the dataset where m is the length of the entire dataset. \n
         '''
-        if not self.is_crpyto:
+        if not self.is_crypto:
             data = get_stock_data(self.ticker, interval=self.interval,
                                   period=self.period, start_date=self.start_date, end_date=self.end_date)
         else:
@@ -105,6 +110,40 @@ All data goes from earliest to latest and is stored in a data frame.
 You can access individual values by doing: data['High'], data['Low']...
 '''
 
+def get_all_currencies():
+    # curr_lst = ['1INCH','ADA','ALGO','AMP','ANKR','ATOM','BAL','BAND','BAT','BCH','BNT','BOND','BTC',
+    #             'CGLD','CHZ','COMP','CRV','CTSI','DAI','DASH','DOGE','DOT','ENJ','EOS','ETC','ETH','FORTH',
+    #             'FIL','GRT','GTC','ICP','KEEP','KNC','LINK','LPT','LRC','LTC','MANA','MATIC','MIR','MKR',
+    #             'MLN','NMR','NKN','NU','OGN','OMG','OXT','QNT','REN','REP','RLC','SUSHI','SKL','SNX','SOL','STORJ',
+    #             'TRB','UMA','UNI','WBTC','XLM','XTZ','YFI','ZEC','ZRX']
+
+    #Phemex Currency Left
+    curr_lst = ['ADA', 'ALGO', 'ATOM','BAT', 'BOND', 'BTC',
+                'CHZ', 'COMP', 'DOGE', 'DOT', 'ENJ', 'EOS', 'ETH',
+                'FIL', 'GRT', 'GTC', 'LINK', 'LTC', 'MANA', 'MKR',
+                'NU', 'SUSHI', 'SNX',
+                'SOL',
+                'UMA', 'UNI', 'XLM', 'XTZ', 'YFI', 'ZEC']
+    return curr_lst
+
+def get_all_stocks():
+    list_of_tickers = gt.get_tickers()
+    return list_of_tickers
+
+def get_last_crypto_price(symbol,interval):
+    today = datetime.today()
+    start_date = today - timedelta(days=3)
+    start_date = start_date.strftime('%Y-%m-%d-00-00')
+    prices = get_crypto_data(symbol, interval=interval, start_date=start_date)['Close']
+    close_price = prices.tail(1)
+    close_price = close_price.values[0]
+    return close_price
+
+def get_last_stock_price(symbol,interval):
+    prices = get_stock_data(symbol, interval=interval, period='5d')['Close']
+    close_price = prices.tail(2)
+    close_price = close_price.values[0]
+    return close_price
 
 def get_crypto_data(symbol, **kwargs):
     '''
@@ -137,7 +176,7 @@ def get_crypto_data(symbol, **kwargs):
         seconds = 300
     elif interval == '1m':
         seconds = 60
-    data = HistoricalData(symbol, seconds, start_date, end_date).retrieve_data()
+    data = HistoricalData(symbol, seconds, start_date, end_date,verbose=False).retrieve_data()
     data = data.rename(columns={"open": "Open", "high": "High", "low": "Low", "close": "Close", 'volume': 'Volume'})
     return data
 
@@ -151,7 +190,8 @@ def get_stock_data(symbol, **kwargs):
         *interval* (optional) - Takes the interval of prices: 1d, 1h, 5m or 1m.\n
         *start_date* (optional) - The earliest historic data you want in form YYYY-MM-DD: 2000-01-01 \n
         *end_date* (optional) - The latest historic data you want in form YYYY-MM-DD: 2000-01-01 \n
-        *period* (optional) - Instead of specifying an end_date you can specify a period: 1d, 1y, 1m, 2y \n
+        *period* (optional) - Instead of specifying an end_date you can specify a period: 1d,5d,1mo,3mo,6mo,1y,2y,
+        5y,10y,ytd,max
 
     Output:
         *data* - A data frame with the High, Low, Open, Close and Volume prices. This is the historic prices. By default it returns
@@ -195,7 +235,6 @@ def add_features(input_features, label_features, data, key='Close'):
     new_features = []
     new_features.extend(set(input_features) - set(data.columns))
     new_features.extend(set(label_features) - set(data.columns))
-
     for new_feature in new_features:
         try:
             data = add_technical_indicators[new_feature](data, key)
@@ -203,7 +242,6 @@ def add_features(input_features, label_features, data, key='Close'):
             print(f'No function exists to add the dimension {new_feature}')
             raise
     return data
-
 
 def add_SMA(data, key='Close'):
     '''
@@ -224,7 +262,6 @@ def add_SMA(data, key='Close'):
     data['SMA'] = sma
     data = data.iloc[29:, :]
     return data
-
 
 def add_EMA(data, key='Close'):
     '''
